@@ -1,0 +1,23 @@
+{
+    "customer_id": "6176-YJWAS",
+    "tenure_months": 72,
+    "monthly_charges": 97.95,
+    "total_charges": 7114.25,
+    "cltv": 4256,
+    "gender": "Male",
+    "senior_citizen": "No",
+    "partner": "Yes",
+    "dependents": "No",
+    "phone_service": "Yes",
+    "multiple_lines": "Yes",
+    "internet_service": "Fiber optic",
+    "online_security": "Yes",
+    "online_backup": "Yes",
+    "device_protection": "Yes",
+    "tech_support": "No",
+    "streaming_tv": "Yes",
+    "streaming_movies": "No",
+    "contract": "Two year",
+    "paperless_billing": "Yes",
+    "payment_method": "Credit card (automatic)"
+  }
