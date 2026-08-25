@@ -95,8 +95,3 @@ Para confirmar somente se a API e o modelo estão disponíveis, abra
 `http://127.0.0.1:8000/health`. A resposta esperada contém
 `"status": "healthy"` e `"loaded_model": true`.
 
-## Gerar outro payload aleatório
-
-O módulo `src/api/sample_payload.py` contém a função `get_random_payload()`.
-Ela lê um registro aleatório de `data/Telco_customer_churn.xlsx` e retorna os
-campos aceitos por `/predict`.
