@@ -1,6 +1,6 @@
 import pandas as pd
-from api.request import RequestPayload
-from api.response import PredictResponse
+from churn_prediction.api.request import RequestPayload
+from churn_prediction.api.response import PredictResponse
 from fastapi import FastAPI, HTTPException
 from .model import ChurnModel
 
