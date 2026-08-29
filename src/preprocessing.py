@@ -2,24 +2,28 @@ import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
 
 def load_and_split_data(
-    filepath, target_col, test_size=0.2, random_state=7, stratify=False
+    filepath: str,
+    target_col: str,
+    test_size: float = 0.2,
+    random_state: int = 7,
+    stratify: bool = False,
 ):
     """Carrega um CSV e o divide em conjuntos de treino e teste.
 
     Args:
-        filepath (_type_): Caminho do arquivo
-        target_col (_type_): Nome da coluna target
-        test_size (float, optional): Tamanho do conjunto de teste. Defaults to 0.2.
+        filepath (str): Caminho do arquivo CSV.
+        target_col (str): Nome da coluna target para predição.
+        test_size (float, optional): Proporção do conjunto de dados para incluir no teste. Defaults to 0.2.
         random_state (int, optional): Seed para reprodutibilidade. Defaults to 7.
-        stratify (boolean, optional): Flag para realizar estratificação por target_col. Defaults to False.
+        stratify (bool, optional): Flag para realizar estratificação dos dados de acordo com 'target_col'. Defaults to False.
 
     Returns:
-        list: Uma lista contendo os conjuntos de treino e teste separados
+        tuple: Uma tupla contendo (X_train, X_test, y_train, y_test).
     """
 
     df = pd.read_csv(filepath)
@@ -33,7 +37,17 @@ def load_and_split_data(
     )
 
 
-def _create_custom_num_features(df):
+def _create_custom_num_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Realiza a engenharia de features numéricas.
+
+    Calcula 'avg_charge', 'diff_from_avg_charge' e aplica uma transformação logarítmica para lidar com a assimetria do atributo 'total_charges'.
+
+    Args:
+        df (pd.Dataframe): Dataframe de entrada contendo ao menos as colunas 'total_charges', 'tenure_months' e 'montly_charges'.
+
+    Returns:
+        pd.Dataframe: Cópia modificada do dataframe com as novas features.
+    """
     df_out = df.copy()
     df_out["avg_charge"] = (df_out.total_charges / df_out.tenure_months).fillna(0)
     df_out["diff_from_avg_charge"] = df_out.avg_charge - df_out.monthly_charges
@@ -41,7 +55,21 @@ def _create_custom_num_features(df):
     return df_out
 
 
-def create_preprocessing_pipeline(num_features, cat_features):
+def create_preprocessing_pipeline(
+    num_features: list, cat_features: list
+) -> ColumnTransformer:
+    """Cria um ColumnTransformer do scikit-learn para preprocessar dados numéricos e categóricos.
+
+    Aplica as etapas de feature engineering e scaling para as features numéricas, e one-hot encoding
+    para features categóricas.
+
+    Args:
+        num_features (list): Lista de features numéricas para serem transformadas.
+        cat_features (list): Lista de features categóricas para serem transformadas.
+
+    Returns:
+        ColumnTransformer: componente configurado de pré-processamento do pipeline
+    """
     custom_features_transformer = FunctionTransformer(
         _create_custom_num_features, validate=False
     )
@@ -60,6 +88,15 @@ def create_preprocessing_pipeline(num_features, cat_features):
     return preprocessor
 
 
-def assemble_full_pipeline(preprocessor, model):
+def assemble_full_pipeline(preprocessor: ColumnTransformer, model) -> Pipeline:
+    """Realiza o encadeamento do pipeline de preprocessamento com o modelo de machine learning em um único pipeline.
+
+    Args:
+        preprocessor (ColumnTransformer): O pipeline de trasformação das features.
+        model: Um modelo compatível com o scikit-learn (e.g.: LogiticRegression, RandomForestClassifier).
+
+    Returns:
+        Pipeline: O pipeline do scikit-learn pronto para treino e previsão.
+    """
     pipeline = make_pipeline(preprocessor, model)
     return pipeline

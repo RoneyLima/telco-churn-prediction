@@ -4,18 +4,40 @@ from sklearn.metrics import (
     average_precision_score,
     precision_recall_fscore_support,
 )
+from sklearn.pipeline import Pipeline
 
 from utils import log_training_run
 
 
-def train_model(pipeline, X_train, y_train):
+def train_model(pipeline, X_train, y_train) -> Pipeline:
+    """Treina um pipeline do scikit-learn usando os dados de treinamento fornecidos.
+
+    Args:
+        pipeline: Um pipeline do scikit-learn ou modelo para ser treinado.
+        X_train: Conjunto de dados de treinamento.
+        y_train: Rótulos verdadeiros do conjunto de dados de treinamento.
+
+    Returns:
+        Pipeline: A instância treinada do pipeline/modelo.
+    """
     pipeline.fit(X_train, y_train)
 
     return pipeline
 
 
-def evaluate_model(model_name, pipeline, X_test, y_test, log_filepath):
+def evaluate_model(model_name: str, pipeline, X_test, y_test, log_filepath: str):
+    """Avalia o pipeline treinado em dados de teste, calcula métricas de performance, registra o experimento e printa um resumo.
 
+    Args:
+        model_name (str): Identificador/nome do modelo sendo avaliado.
+        pipeline: O pipeline do scikit-learn treinado e suportando as funções predict e predict_proba.
+        X_test: Conjunto de dados de teste.
+        y_test: Rótulos verdadeiros do conjunto de dados de teste.
+        log_filepath (str): Caminho do arquvo de log onde o experimento será registrado.
+
+    Returns:
+        np.ndarray: Os rótulos previstos para o conjunto de testes.
+    """
     y_pred = pipeline.predict(X_test)
     y_proba = pipeline.predict_proba(X_test)[:, 1]
 
@@ -41,6 +63,12 @@ def evaluate_model(model_name, pipeline, X_test, y_test, log_filepath):
     return y_pred
 
 
-def save_artifact(pipeline, filename):
+def save_artifact(pipeline, filename: str):
+    """Serializa e salva o pipeline em disco usando joblib.
+
+    Args:
+        pipeline: O pipeline treinado do modelo a ser salvo.
+        filename (str): O caminho de destino e nome do arquivo a ser salvo.
+    """
     joblib.dump(pipeline, filename)
     print(f"Artefato salvo com sucesso em {filename}")
