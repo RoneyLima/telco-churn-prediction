@@ -34,7 +34,7 @@ Não é necessário ativar o ambiente virtual para usar os comandos com `uv run`
 Na raiz do projeto, execute:
 
 ```powershell
-uv run --no-sync uvicorn churn_prediction.api.main:app --app-dir src --reload
+uv run --no-sync uvicorn telco_churn_prediction.api.main:app --app-dir src --reload
 ```
 
 O parâmetro `--app-dir src` adiciona o diretório `src/` ao caminho de imports. O
@@ -108,7 +108,7 @@ e sua probabilidade. Caso contrário, `probability` será `null`:
 Por padrão, a API procura o artefato neste caminho:
 
 ```text
-models/churn_model.joblib
+models/baseline_logistic_regression_pipeline.joblib
 ```
 
 O arquivo deve conter o pipeline completo, incluindo o pré-processamento e o
@@ -120,5 +120,5 @@ status HTTP `503` com a mensagem `Prediction model is unavailable.`.
 Para uma execução local sem o modo de desenvolvimento, remova `--reload`:
 
 ```powershell
-uv run --no-sync uvicorn churn_prediction.api.main:app --app-dir src
+uv run --no-sync uvicorn telco_churn_prediction.api.main:app --app-dir src
 ```
