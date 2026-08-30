@@ -4,12 +4,13 @@ from churn_prediction.api.response import PredictResponse
 from fastapi import FastAPI, HTTPException
 from .model import ChurnModel
 
+from .model import ChurnModel
 
 churn_model = ChurnModel()
 churn_model.load()
 
 
-app = FastAPI(title="API Inicial com FastAPI")
+app = FastAPI(title="Telco Churn Prediction com FastAPI")
 
 
 @app.get("/")
