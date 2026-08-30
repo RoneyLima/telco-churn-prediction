@@ -6,7 +6,7 @@ import joblib
 
 class ChurnModel:
     """
-    Keep the trained pipeline or model loaded while API is in execution.
+    Keep the trained pipeline or model in memory while API is in execution.
     """
 
     def __init__(self, model_path: Path | None = None) -> None:
@@ -21,12 +21,12 @@ class ChurnModel:
     @property
     def is_loaded(self) -> bool:
         """
-        Indicates whether the model or pipeline was loaded sucessfully.
+        Indicates whether the trained pipeline or model was loaded successfully.
         """
         return self.model is not None
 
     def load(self) -> None:
         """
-        Load model or trained pipeline once on API initialization
+        Load model once on API initialization
         """
         self.model = joblib.load(self.model_path)
