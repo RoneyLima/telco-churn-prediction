@@ -2,12 +2,13 @@ import pandas as pd
 import pytest
 from sklearn.compose import ColumnTransformer
 
-from telco_churn_prediction.data.preprocessing import (
-    DEFAULT_FEATURE_CONFIG,
+from telco_churn_prediction.modeling.preprocessing import (
+    DEFAULT_CATEGORICAL_FEATURES,
+    DEFAULT_NUMERIC_FEATURES,
     EDA_COLUMNS_TO_DROP,
-    FeatureConfig,
-    build_column_transformer,
+    create_preprocessing_pipeline,
     preprocess_telco_dataset,
+    validate_feature_columns,
 )
 
 
@@ -35,9 +36,11 @@ def test_applies_only_eda_cleaning_rules() -> None:
 
 
 def test_builds_column_transformer_from_explicit_config() -> None:
-    config = FeatureConfig.from_sequences(["amount"], ["category"])
-
-    transformer = build_column_transformer(config)
+    transformer = create_preprocessing_pipeline(
+        ["amount"],
+        ["category"],
+        engineer_numeric_features=False,
+    )
 
     assert isinstance(transformer, ColumnTransformer)
     assert transformer.transformers[0][2] == ["amount"]
@@ -46,4 +49,8 @@ def test_builds_column_transformer_from_explicit_config() -> None:
 
 def test_rejects_missing_configured_features() -> None:
     with pytest.raises(ValueError, match="not found"):
-        DEFAULT_FEATURE_CONFIG.validate(["tenure_months"])
+        validate_feature_columns(
+            pd.DataFrame(columns=["tenure_months"]),
+            DEFAULT_NUMERIC_FEATURES,
+            DEFAULT_CATEGORICAL_FEATURES,
+        )

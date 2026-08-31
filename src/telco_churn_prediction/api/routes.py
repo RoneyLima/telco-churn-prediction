@@ -11,15 +11,14 @@ from telco_churn_prediction.api.service import ModelService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-modelService = ModelService()
-predict_churn = modelService.predict
-model_is_ready = modelService.is_loaded
+
 
 @router.get("/")
 def home(request: Request) -> dict[str, Any]:
     """
     Return API metadata and available endpoints.    
     """
+    model_service: ModelService = request.app.state.model_service
     return {
         "name": request.app.title,
         "version": request.app.version,
@@ -30,7 +29,7 @@ def home(request: Request) -> dict[str, Any]:
             "GET /docs": "Interactive Swagger documentation",
             "POST /predict": "Make predictions",
         },
-        "loaded_model": model_is_ready,
+        "loaded_model": model_service.is_loaded,
     }
 
 
@@ -42,13 +41,13 @@ def health(request: Request, response: Response) -> dict[str, str | bool]:
     Returns:
         dict: status, loaded_model
     """
-    loaded_model = model_is_ready
-    if not loaded_model:
+    model_service: ModelService = request.app.state.model_service
+    if not model_service.is_loaded:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
     return {
-        "status": "healthy" if loaded_model else "unhealthy",
-        "loaded_model": loaded_model,
+        "status": "healthy" if model_service.is_loaded else "unhealthy",
+        "loaded_model": model_service.is_loaded,
     }
 
 
@@ -62,15 +61,15 @@ def predict(payload: RequestPayload, request: Request) -> PredictResponse:
     
     """
     try:
-        model = getattr(request.app.state, "model", None)
-        if not model_is_ready:
+        model_service: ModelService = request.app.state.model_service
+        if not model_service.is_loaded:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Prediction model is unavailable.",
             )
 
         features = payload.model_dump(exclude={"customer_id"})
-        prediction = predict_churn(features, model=model)
+        prediction = model_service.predict(features)
         return PredictResponse(
             customer_id=payload.customer_id,
             churn_predict=prediction,

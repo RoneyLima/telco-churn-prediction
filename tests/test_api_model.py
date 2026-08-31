@@ -1,13 +1,13 @@
 from pathlib import Path
 
-from telco_churn_prediction.api.model import ChurnModel
+from telco_churn_prediction.api.service import ModelService
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_uses_model_from_project_root_by_default() -> None:
-    churn_model = ChurnModel()
+    churn_model = ModelService()
 
     assert churn_model.model_path == (
         PROJECT_ROOT
