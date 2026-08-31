@@ -8,11 +8,12 @@ from fastapi import APIRouter, HTTPException, Request, Response, status
 from telco_churn_prediction.api.request import RequestPayload
 from telco_churn_prediction.api.response import PredictResponse
 from telco_churn_prediction.prediction.loader import is_model_ready
-from telco_churn_prediction.api.service import predict as predict_churn
+from telco_churn_prediction.api.service import ModelService
 
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+predict_churn = ModelService().predict
 
 
 @router.get("/")
