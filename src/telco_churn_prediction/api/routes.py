@@ -5,8 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from telco_churn_prediction.api.request import RequestPayload
-from telco_churn_prediction.api.response import PredictResponse
+from telco_churn_prediction.api.schemas import PredictResponse, RequestPayload
 from telco_churn_prediction.api.service import ModelService
 
 
@@ -17,13 +16,14 @@ def is_model_ready(model: Any | None) -> bool:
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-model_service = ModelService()
-predict_churn = model_service.predict
 
 
 @router.get("/")
 def home(request: Request) -> dict[str, Any]:
-    """Returns API general information."""
+    """
+    Return API metadata and available endpoints.    
+    """
+    model_service: ModelService = request.app.state.model_service
     return {
         "name": request.app.title,
         "version": request.app.version,
@@ -34,38 +34,50 @@ def home(request: Request) -> dict[str, Any]:
             "GET /docs": "Interactive Swagger documentation",
             "POST /predict": "Make predictions",
         },
-        "loaded_model": is_model_ready(getattr(request.app.state, "model", None)),
+        "loaded_model": model_service.is_loaded,
     }
 
 
 @router.get("/health")
 def health(request: Request, response: Response) -> dict[str, str | bool]:
-    """API health check."""
-    loaded_model = is_model_ready(getattr(request.app.state, "model", None))
-    if not loaded_model:
+    """
+    Report whether the API model is ready to serve predictions.
+    
+    Returns:
+        dict: status, loaded_model
+    """
+    model_service: ModelService = request.app.state.model_service
+    if not model_service.is_loaded:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
     return {
-        "status": "healthy" if loaded_model else "unhealthy",
-        "loaded_model": loaded_model,
+        "status": "healthy" if model_service.is_loaded else "unhealthy",
+        "loaded_model": model_service.is_loaded,
     }
 
 
 @router.post("/predict", response_model=PredictResponse)
 def predict(payload: RequestPayload, request: Request) -> PredictResponse:
+    """
+    Predict churn for one customer.
+    
+    Returns:
+        dict: customer_id, churn_predict
+    
+    """
     try:
-        model = getattr(request.app.state, "model", None)
-        if not is_model_ready(model):
+        model_service: ModelService = request.app.state.model_service
+        if not model_service.is_loaded:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Prediction model is unavailable.",
             )
 
         features = payload.model_dump(exclude={"customer_id"})
-        result = predict_churn(features, model=model)
+        prediction = model_service.predict(features)
         return PredictResponse(
             customer_id=payload.customer_id,
-            churn_predict=result,
+            churn_predict=prediction,
         )
     except HTTPException:
         raise
@@ -79,6 +91,12 @@ def predict(payload: RequestPayload, request: Request) -> PredictResponse:
         logger.info("Invalid prediction input: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        logger.warning("Prediction model is unavailable: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
     except Exception:

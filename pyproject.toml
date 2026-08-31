@@ -30,7 +30,8 @@ testpaths = ["tests"]
 extraPaths = ["src"]
 
 [project.scripts]
-telco-churn-prediction = "telco_churn_prediction:main"
+telco-churn-prepare = "telco_churn_prediction.modeling.preprocessing:main"
+telco-churn-train = "telco_churn_prediction.modeling.train:main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]

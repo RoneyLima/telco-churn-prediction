@@ -12,9 +12,20 @@ A métrica principal do negócio está alinhada à decisão de retenção: prior
 
 - `data/`: conjunto pré-processado e dados de origem.
 - `models/`: artefatos serializados do pipeline treinado.
-- `src/`: código modular do pipeline, API e utilitários.
+- `src/telco_churn_prediction/modeling/`: preparação de dados, pipeline,
+  treinamento, avaliação e persistência do modelo.
+- `src/telco_churn_prediction/api/`: contratos, serviço de inferência, rotas e
+  inicialização da API.
 - `tests/`: testes automatizados para pré-processamento e API.
 - `doc/`: documentação de negócio, dicionário de dados e runbook.
+
+O código de aplicação em `src` possui apenas os dois domínios abaixo:
+
+```text
+src/telco_churn_prediction/
+├── api/
+└── modeling/
+```
 
 ## Pré-requisitos
 
@@ -41,6 +52,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+pip install -e .
 ```
 
 ### Opção 2: ambiente com `uv` (recomendado)
@@ -61,6 +73,26 @@ Ou, se estiver usando `uv`:
 
 ```powershell
 uv run pytest -q
+```
+
+## Preparação dos dados e treinamento
+
+Prepare o conjunto de dados sem iniciar o treinamento:
+
+```powershell
+telco-churn-prepare
+```
+
+Execute o fluxo completo de preparação e treinamento:
+
+```powershell
+telco-churn-train
+```
+
+Com `uv`, prefixe os comandos com `uv run`, por exemplo:
+
+```powershell
+uv run telco-churn-train
 ```
 
 ## Execução da API localmente

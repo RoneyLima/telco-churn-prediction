@@ -1,59 +1,72 @@
+"""Model loading and inference services used by the API."""
+
 import logging
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
 
 import joblib
 import pandas as pd
+from sklearn.pipeline import Pipeline
+
+from telco_churn_prediction import DEFAULT_MODEL_PATH
+from telco_churn_prediction.api.schemas import ChurnPrediction
+
 
 
 class ModelService:
-    """Load the trained model once and keep it in memory while the API is running."""
+    """
+    Load one trained pipeline and use it for API predictions."""
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, model_path: Path | None = None) -> None:
-        project_root = Path(__file__).resolve().parents[3]
-        self.model_path = model_path or (
-            project_root / "models" / "baseline_logistic_regression_pipeline.joblib"
-        )
-        self.model: Any | None = None
+        self.model_path = model_path if model_path is not None else DEFAULT_MODEL_PATH
+        self.model: Pipeline | None = None
 
     @property
     def is_loaded(self) -> bool:
-        """Indicates whether the trained pipeline or model was loaded successfully."""
-        is_loaded = self.model is not None
-        self.logger.info("Model status: %s", is_loaded)
-        return is_loaded
+        """
+        Indicate whether a model is in memory.
+        """
+        return self.model is not None
 
-    def load(self) -> None:
-        """Load model once on API initialization."""
-        self.model = joblib.load(self.model_path)
+    def load(self) -> Pipeline:
+        """
+        Load the configured pipeline into memory.
+
+        Returns:
+            Pipeline: loaded prediction pipeline
+        """
+        if not self.model_path.is_file():
+            raise FileNotFoundError(f"Model file not found: {self.model_path}")
+
+        loaded_model = joblib.load(self.model_path)
+        if not isinstance(loaded_model, Pipeline):
+            raise TypeError(f"Model artifact is not a Pipeline: {self.model_path}")
+
+        self.model = loaded_model
         self.logger.info("Model loaded from %s", self.model_path)
+        return loaded_model
 
     def predict(
         self,
-        features: Mapping[str, Any],
-        model: Any | None = None,
-    ) -> dict[str, Any]:
-        """Predict churn for one validated feature mapping."""
-        prediction_model = model if model is not None else self.model
-        if prediction_model is None:
-            raise ValueError("Prediction model is unavailable.")
+        features: Mapping[str, object],
+    ) -> ChurnPrediction:
+        """Predict churn for one customer."""
+        if self.model is None:
+            raise RuntimeError("Prediction model is unavailable.")
 
         input_data = pd.DataFrame([dict(features)])
-        prediction = prediction_model.predict(input_data)[0]
-        result: dict[str, Any] = {"prediction": prediction}
+        prediction = int(self.model.predict(input_data)[0])
+        probability = None
 
-        if hasattr(prediction_model, "predict_proba"):
-            probabilities = prediction_model.predict_proba(input_data)[0]
-            classes = list(getattr(prediction_model, "classes_", []))
-            if classes:
-                probability_index = (
-                    classes.index(prediction) if prediction in classes else -1
-                )
-                if probability_index >= 0:
-                    result["probability"] = float(probabilities[probability_index])
+        if hasattr(self.model, "predict_proba"):
+            probabilities = self.model.predict_proba(input_data)[0]
+            class_index = list(self.model.classes_).index(prediction)
+            probability = float(probabilities[class_index])
 
         self.logger.info("Prediction completed")
-        return result
+        return ChurnPrediction(
+            prediction=prediction,
+            probability=probability,
+        )

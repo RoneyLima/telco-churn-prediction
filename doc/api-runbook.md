@@ -22,17 +22,21 @@ No terminal, acesse a raiz do projeto e sincronize o ambiente:
 uv sync --group dev
 ```
 
-Esse comando cria o ambiente virtual `.venv`, se necessário, e instala as dependências definidas em `pyproject.toml`.
+O comando cria o ambiente virtual `.venv`, caso ele ainda não exista, instala
+as dependências e registra o pacote `telco_churn_prediction`.
+
+Não é necessário ativar o ambiente virtual para usar os comandos com `uv run`.
 
 ## Iniciar a API
 
 Na raiz do projeto, execute:
 
 ```powershell
-uv run uvicorn telco_churn_prediction.api.main:app --host 127.0.0.1 --port 8000 --reload
+uv run uvicorn telco_churn_prediction.api.main:app --reload
 ```
 
-O parâmetro `--reload` reinicia o servidor automaticamente quando o código muda e deve ser usado somente durante o desenvolvimento.
+O parâmetro `--reload` reinicia o servidor automaticamente quando o código muda
+e deve ser usado somente durante o desenvolvimento.
 
 Quando o servidor estiver pronto, acesse:
 
@@ -59,69 +63,30 @@ A resposta esperada é:
 }
 ```
 
-Se o modelo não estiver carregado, a API responde com `503` e o status `unhealthy`.
+O endpoint retorna `503` e informa `loaded_model: false` quando o artefato do
+modelo não está disponível.
 
 ## Testar uma previsão
 
-Use o payload real do contrato da API conforme o modelo treinado:
+Use a interface Swagger para enviar os atributos definidos pelo contrato:
 
-```json
-{
-  "customer_id": "6176-YJWAS",
-  "tenure_months": 24,
-  "monthly_charges": 65.0,
-  "total_charges": 1580.0,
-  "cltv": 2400,
-  "gender": "Female",
-  "senior_citizen": "No",
-  "partner": "Yes",
-  "dependents": "No",
-  "phone_service": "Yes",
-  "multiple_lines": "No",
-  "internet_service": "Fiber optic",
-  "online_security": "Yes",
-  "online_backup": "No",
-  "device_protection": "Yes",
-  "tech_support": "No",
-  "streaming_tv": "Yes",
-  "streaming_movies": "No",
-  "contract": "Month-to-month",
-  "paperless_billing": "Yes",
-  "payment_method": "Bank transfer (automatic)"
-}
-```
+1. Abra o endpoint **POST /predict**.
+2. Selecione **Try it out**.
+3. Informe os atributos do cliente.
+4. Selecione **Execute**.
 
-Exemplo de chamada com `curl`:
+Para testar pelo PowerShell com o payload versionado no projeto, execute:
 
 ```powershell
-curl -X POST "http://127.0.0.1:8000/predict" `
-  -H "Content-Type: application/json" `
-  -d '{
-    "customer_id": "6176-YJWAS",
-    "tenure_months": 24,
-    "monthly_charges": 65.0,
-    "total_charges": 1580.0,
-    "cltv": 2400,
-    "gender": "Female",
-    "senior_citizen": "No",
-    "partner": "Yes",
-    "dependents": "No",
-    "phone_service": "Yes",
-    "multiple_lines": "No",
-    "internet_service": "Fiber optic",
-    "online_security": "Yes",
-    "online_backup": "No",
-    "device_protection": "Yes",
-    "tech_support": "No",
-    "streaming_tv": "Yes",
-    "streaming_movies": "No",
-    "contract": "Month-to-month",
-    "paperless_billing": "Yes",
-    "payment_method": "Bank transfer (automatic)"
-  }'
+$body = Get-Content tests/fixtures/prediction-payload.json -Raw
+Invoke-RestMethod `
+  -Uri http://127.0.0.1:8000/predict `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
 ```
 
-Resposta esperada no formato da API:
+O endpoint retorna a classe prevista e sua probabilidade:
 
 ```json
 {
@@ -132,8 +97,6 @@ Resposta esperada no formato da API:
   }
 }
 ```
-
-A resposta exata pode variar conforme o modelo carregado e o limiar operacional configurado, mas a estrutura da resposta deve seguir esse contrato.
 
 ## Disponibilizar o modelo
 
@@ -150,5 +113,5 @@ O arquivo deve conter o pipeline completo, incluindo o pré-processamento e o es
 Para uma execução local sem o modo de desenvolvimento, remova `--reload`:
 
 ```powershell
-uv run uvicorn telco_churn_prediction.api.main:app --host 127.0.0.1 --port 8000
+uv run uvicorn telco_churn_prediction.api.main:app
 ```
