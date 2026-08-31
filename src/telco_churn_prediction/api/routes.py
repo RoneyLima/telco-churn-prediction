@@ -9,6 +9,11 @@ from telco_churn_prediction.api.schemas import PredictResponse, RequestPayload
 from telco_churn_prediction.api.service import ModelService
 
 
+def is_model_ready(model: Any | None) -> bool:
+    """Return whether the model is available for prediction."""
+    return model is not None and hasattr(model, "predict")
+
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 

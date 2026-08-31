@@ -1,12 +1,12 @@
 # Como executar e testar a API
 
-Este guia mostra como instalar as dependências, iniciar a API localmente e
-testar os endpoints usando o `uv`.
+Este guia mostra como instalar as dependências, iniciar a API localmente e testar os endpoints usando o `uv`.
 
 ## Pré-requisitos
 
 - Python 3.13 ou superior.
 - `uv` instalado e disponível no terminal.
+- Repositório clonado localmente.
 
 Para confirmar a instalação do `uv`, execute:
 
@@ -40,14 +40,15 @@ e deve ser usado somente durante o desenvolvimento.
 
 Quando o servidor estiver pronto, acesse:
 
-- Documentação Swagger: `http://127.0.0.1:8000/docs`.
-- Verificação de saúde: `http://127.0.0.1:8000/health`.
+- Documentação Swagger: http://127.0.0.1:8000/docs
+- Verificação de saúde: http://127.0.0.1:8000/health
+- Predição: http://127.0.0.1:8000/predict
 
 Para encerrar o servidor, pressione `Ctrl+C` no terminal.
 
 ## Verificar a API
 
-Abra `http://127.0.0.1:8000/health` ou execute:
+Abra http://127.0.0.1:8000/health ou execute:
 
 ```powershell
 Invoke-RestMethod -Uri http://127.0.0.1:8000/health
@@ -99,15 +100,13 @@ O endpoint retorna a classe prevista e sua probabilidade:
 
 ## Disponibilizar o modelo
 
-Por padrão, a API procura o artefato neste caminho:
+Por padrão, a API usa o artefato neste caminho:
 
 ```text
 models/baseline_logistic_regression_pipeline.joblib
 ```
 
-O arquivo deve conter o pipeline completo, incluindo o pré-processamento e o
-estimador treinado. Enquanto o arquivo não existir, `POST /predict` retornará o
-status HTTP `503` com a mensagem `Prediction model is unavailable.`.
+O arquivo deve conter o pipeline completo, incluindo o pré-processamento e o estimador treinado. Enquanto o arquivo não existir, `POST /predict` retornará o status HTTP `503` com a mensagem `Prediction model is unavailable.`.
 
 ## Executar sem recarregamento automático
 
