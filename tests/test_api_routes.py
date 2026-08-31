@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from fastapi import Response
+from fastapi import FastAPI, Request, Response
 from fastapi.testclient import TestClient
 from telco_churn_prediction.api import main, routes
 from telco_churn_prediction.api.request import RequestPayload
@@ -15,6 +15,12 @@ PAYLOAD_PATH = (
 )
 
 
+def make_request(model: object | None) -> Request:
+    app = FastAPI()
+    app.state.model = model
+    return Request({"type": "http", "app": app})
+
+
 def test_predict_uses_existing_request_and_response_models(monkeypatch) -> None:
     payload_data = json.loads(PAYLOAD_PATH.read_text(encoding="utf-8"))
     payload = RequestPayload(**payload_data)
@@ -25,9 +31,7 @@ def test_predict_uses_existing_request_and_response_models(monkeypatch) -> None:
         "predict_churn",
         lambda features, model: expected_prediction,
     )
-    request = SimpleNamespace(
-        app=SimpleNamespace(state=SimpleNamespace(model=SimpleNamespace(predict=lambda: None)))
-    )
+    request = make_request(SimpleNamespace(predict=lambda: None))
 
     response = routes.predict(payload, request)
 
@@ -37,9 +41,7 @@ def test_predict_uses_existing_request_and_response_models(monkeypatch) -> None:
 
 
 def test_health_validates_initialized_model() -> None:
-    request = SimpleNamespace(
-        app=SimpleNamespace(state=SimpleNamespace(model=SimpleNamespace(predict=lambda: None)))
-    )
+    request = make_request(SimpleNamespace(predict=lambda: None))
     http_response = Response()
 
     result = routes.health(request, http_response)
@@ -49,9 +51,7 @@ def test_health_validates_initialized_model() -> None:
 
 
 def test_health_returns_503_without_initialized_model() -> None:
-    request = SimpleNamespace(
-        app=SimpleNamespace(state=SimpleNamespace(model=None))
-    )
+    request = make_request(None)
     http_response = Response()
 
     result = routes.health(request, http_response)
