@@ -19,13 +19,11 @@ uv --version
 No terminal, acesse a raiz do projeto e sincronize o ambiente:
 
 ```powershell
-uv sync --no-install-project
+uv sync --group dev
 ```
 
-O comando cria o ambiente virtual `.venv`, caso ele ainda não exista, e instala
-as dependências definidas no `pyproject.toml` e no `uv.lock`. A opção
-`--no-install-project` é necessária porque o nome de pacote configurado no
-projeto ainda não corresponde ao diretório Python `churn_prediction`.
+O comando cria o ambiente virtual `.venv`, caso ele ainda não exista, instala
+as dependências e registra o pacote `telco_churn_prediction`.
 
 Não é necessário ativar o ambiente virtual para usar os comandos com `uv run`.
 
@@ -34,13 +32,11 @@ Não é necessário ativar o ambiente virtual para usar os comandos com `uv run`
 Na raiz do projeto, execute:
 
 ```powershell
-uv run --no-sync uvicorn telco_churn_prediction.api.main:app --app-dir src --reload
+uv run uvicorn telco_churn_prediction.api.main:app --reload
 ```
 
-O parâmetro `--app-dir src` adiciona o diretório `src/` ao caminho de imports. O
-parâmetro `--reload` reinicia o servidor automaticamente quando o código muda e
-deve ser usado somente durante o desenvolvimento. A opção `--no-sync` evita
-que o `uv` tente instalar o pacote do projeto antes de iniciar o servidor.
+O parâmetro `--reload` reinicia o servidor automaticamente quando o código muda
+e deve ser usado somente durante o desenvolvimento.
 
 Quando o servidor estiver pronto, acesse:
 
@@ -61,45 +57,43 @@ A resposta esperada é:
 
 ```json
 {
-  "status": "ok"
+  "status": "healthy",
+  "loaded_model": true
 }
 ```
 
-O endpoint confirma que a aplicação está em execução. Ele não confirma se o
-arquivo do modelo está disponível.
+O endpoint retorna `503` e informa `loaded_model: false` quando o artefato do
+modelo não está disponível.
 
 ## Testar uma previsão
 
-Como as features finais ainda não foram definidas, o endpoint recebe um objeto
-genérico chamado `features`.
-
-Use a interface Swagger:
+Use a interface Swagger para enviar os atributos definidos pelo contrato:
 
 1. Abra o endpoint **POST /predict**.
 2. Selecione **Try it out**.
-3. Informe as features esperadas pelo modelo carregado.
+3. Informe os atributos do cliente.
 4. Selecione **Execute**.
 
-Exemplo da estrutura do payload:
+Para testar pelo PowerShell com o payload versionado no projeto, execute:
 
-```json
-{
-  "features": {
-    "nome_da_feature": "valor_da_feature"
-  }
-}
+```powershell
+$body = Get-Content tests/fixtures/prediction-payload.json -Raw
+Invoke-RestMethod `
+  -Uri http://127.0.0.1:8000/predict `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
 ```
 
-O exemplo representa apenas o formato da requisição. Substitua os campos
-internos pelas mesmas features e tipos usados para treinar o pipeline.
-
-Quando o modelo implementa `predict_proba`, a resposta contém a classe prevista
-e sua probabilidade. Caso contrário, `probability` será `null`:
+O endpoint retorna a classe prevista e sua probabilidade:
 
 ```json
 {
-  "prediction": 1,
-  "probability": 0.82
+  "customer_id": "6176-YJWAS",
+  "churn_predict": {
+    "prediction": 0,
+    "probability": 0.75
+  }
 }
 ```
 
@@ -120,5 +114,5 @@ status HTTP `503` com a mensagem `Prediction model is unavailable.`.
 Para uma execução local sem o modo de desenvolvimento, remova `--reload`:
 
 ```powershell
-uv run --no-sync uvicorn telco_churn_prediction.api.main:app --app-dir src
+uv run uvicorn telco_churn_prediction.api.main:app
 ```
