@@ -7,24 +7,23 @@ from fastapi import APIRouter, HTTPException, Request, Response, status
 
 from telco_churn_prediction.api.request import RequestPayload
 from telco_churn_prediction.api.response import PredictResponse
-from telco_churn_prediction.prediction.loader import is_model_ready
 from telco_churn_prediction.api.service import ModelService
+
+
+def is_model_ready(model: Any | None) -> bool:
+    """Return whether the model is available for prediction."""
+    return model is not None and hasattr(model, "predict")
 
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-predict_churn = ModelService().predict
+model_service = ModelService()
+predict_churn = model_service.predict
 
 
 @router.get("/")
 def home(request: Request) -> dict[str, Any]:
-    """
-    Returns API general informations.
-    
-    Returns:
-        dict: name, version, description and available endpoints.
-    """
-    
+    """Returns API general information."""
     return {
         "name": request.app.title,
         "version": request.app.version,
@@ -35,23 +34,13 @@ def home(request: Request) -> dict[str, Any]:
             "GET /docs": "Interactive Swagger documentation",
             "POST /predict": "Make predictions",
         },
-        "loaded_model": is_model_ready(
-            getattr(request.app.state, "model", None)
-        ),
+        "loaded_model": is_model_ready(getattr(request.app.state, "model", None)),
     }
 
 
 @router.get("/health")
 def health(request: Request, response: Response) -> dict[str, str | bool]:
-    """
-    API Health Check
-    
-    Used to monitoring the API Status in production environment.
-    
-    Returns:
-        dict: API Status and Model State
-    """
-    
+    """API health check."""
     loaded_model = is_model_ready(getattr(request.app.state, "model", None))
     if not loaded_model:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
