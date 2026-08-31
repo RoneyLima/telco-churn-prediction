@@ -177,6 +177,10 @@ Resposta esperada:
 - [doc/entendimento-do-negocio.md](doc/entendimento-do-negocio.md): contexto de negócio, métricas e premissas.
 - [doc/model-card.md](doc/model-card.md): resumo de performance, limitações e vieses do modelo.
 - [doc/api-runbook.md](doc/api-runbook.md): passos operacionais para uso da API.
+- [doc/notebooks-guide.md](doc/notebooks-guide.md): preparação do ambiente e
+  ordem de execução dos notebooks.
+- [doc/modeling-runbook.md](doc/modeling-runbook.md): execução do fluxo de
+  modelagem implementado em `src`.
 
 ## Observações operacionais
 
